@@ -1,0 +1,53 @@
+---
+title: "HU MATH 510 Final Project"
+author: "Jean, Gwenth, Joshua & Aaron"
+date: "February 19, 2016"
+output: 
+  html_document: 
+    highlight: haddock
+    theme: cosmo
+---
+
+This is the draft and skeleton of the final report. Blah blah blah... 
+
+### 1. Introduction
+
+> a summary of the data set and your goal.
+
+### 2. EDA
+
+> any univariate or bivariate summaries worth reporting.
+
+### 3. Inference
+
+>  nswer the research question you have posed using a
+hypothesis test or a confidence interval.
+
+### 4. The "Best Model" 
+
+What kind of title is this... Orz Kevin... 
+
+We have only 456 data points... let's torture the data until it confesses... 
+
+> What is the “best” linear model for predicting the response variable? You do not need to explain every step you took to arrive at this model, but should give some indication of why you chose the model you did. If you tried a few different models, how did you settle on one?
+
+● How well does your model do? What is the percent variation explained?
+● What does your model tell you about relationships between your explanatory variables and your response variable?
+● What conditions do you need for your analysis to hold? What are the implications if some of those conditions are violated.
+
+### 5. Prediction
+
+> Using your best model and a movie from late 2015 or 2016 of your choosing, predict its audience score. (You will need to find the relevant information about the movie online.)
+Include a description of the uncertainty of you prediction.
+
+### 6. Conclusion
+
+● What is the bottom line from your analysis?
+● How well can you predict audience scores?
+● What are the caveats to your analysis?
+● Does this data set lack information that you would have liked to
+use?
+
+And you want this in 3 pages... this is already worse than Coursera... 
+
+
