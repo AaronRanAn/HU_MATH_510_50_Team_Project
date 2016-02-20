@@ -2,7 +2,7 @@
 
 ### Aaron:
 
-You have a blend of Doer, Supportive, and Cautious traits. From the results we have so far, we cannot tell which of these traits is the strongest for you. You may have a very balanced blend of all three traits.
+You have a blend of `Doer`, `Supportive`, and `Cautious` traits. From the results we have so far, we cannot tell which of these traits is the strongest for you. You may have a very balanced blend of all three traits.
 
 Some words that describe you are:
 - Decisive,
@@ -14,7 +14,7 @@ You have both task-oriented and people-oriented traits, and you probably tend to
 
 ### Jianyang
 
-You have a blend of both Supportive and Dominant traits. Your Supportive traits are probably a little stronger than your Dominant traits.
+You have a blend of both `Supportive` and `Dominant` traits. Your Supportive traits are probably a little stronger than your Dominant traits.
 
 Some words that describe you are:
 - Helpful,
@@ -27,7 +27,7 @@ You are more reserved than outgoing. You probably prefer interacting with people
 
 
 ### Gweneth
-You have a blend of Cautious, Supportive, and Dominant traits. Your Cautious traits are probably a little stronger than your Supportive or Dominant traits.
+You have a blend of `Cautious`, `Supportive`, and `Dominant` traits. Your Cautious traits are probably a little stronger than your Supportive or Dominant traits.
 
 Some words that describe you are:
 - Careful,
