@@ -17,10 +17,10 @@ You have both task-oriented and people-oriented traits, and you probably tend to
 You have a blend of both Supportive and Dominant traits. Your Supportive traits are probably a little stronger than your Dominant traits.
 
 Some words that describe you are:
-Helpful,
-Kind,
-Focused, and
-Methodical.
+- Helpful,
+- Kind,
+- Focused, and
+- Methodical.
 
 You are more reserved than outgoing. You probably prefer interacting with people one-on-one or in small groups rather than large crowds, and you likely enjoy interacting for a purpose other than just to interact and talk. You probably like to do things following a known or proven pattern, although you can likely take charge and make changes if needed.
 
