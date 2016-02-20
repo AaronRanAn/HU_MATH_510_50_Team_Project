@@ -20,3 +20,7 @@ Team Member: `Yu-Chen Chang`, `Mengye Luo`, `Jianyang Chen`, `Aaron Ran An`
 More content coming...
 
 A similar movie rating project for reference [here](http://aaronranan.github.io/JHU_Build_Data_Product_Course_Project_Deck_Final/)
+
+-------
+
+Movie Data from [HERE](http://www2.stat.duke.edu/~mc301/data/movies.html)
