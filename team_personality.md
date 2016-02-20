@@ -12,7 +12,7 @@ Some words that describe you are:
 
 You have both task-oriented and people-oriented traits, and you probably tend towards a task-oriented perspective. You can either be reserved or outgoing depending on the situation. You probably enjoy solving problems and making things happen, and you like to preserve relationships in the process.
 
-### Joshua
+### Jianyang
 
 You have a blend of both Supportive and Dominant traits. Your Supportive traits are probably a little stronger than your Dominant traits.
 
@@ -27,14 +27,6 @@ You are more reserved than outgoing. You probably prefer interacting with people
 
 
 ### Gweneth
-You have a blend of Cautious, Supportive, and Dominant traits. Your Cautious traits are probably a little stronger than your Supportive or Dominant traits.
-
-Some words that describe you are:
-Careful,
-Focused on excellence,
-Results-oriented, and
-Collaborative
-You have both outgoing and reserved traits, although you may tend a little towards an reserved perspective. You probably like to follow proven approaches to get things done in a way that protects other people's feelings. It is likely that you prefer to work alone, but you can work collaboratively with others if necessary.
 
 ### Jean
 
