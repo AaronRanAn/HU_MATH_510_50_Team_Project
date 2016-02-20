@@ -51,3 +51,4 @@ Some words that describe you are:
 
 You are more task-oriented than people-oriented, and you probably enjoy analyzing and solving problems. You probably like to get things done quickly and logically. You likely prefer working on projects to interacting with people.
 
+I am jean, testing....
