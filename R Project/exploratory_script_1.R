@@ -1,8 +1,9 @@
 ## This is the scrpt to explore the data
 
-library(dplyr)
-library(ggplot2)
-library(car)
+require(dplyr)
+require(ggplot2)
+require(car)
+require(tidyr)
 
 load(url("https://stat.duke.edu/~mc301/data/movies.Rdata"))
 
@@ -80,10 +81,32 @@ scatterplot.matrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_
 
 ## Part 3: Building Multiple Linear Regression for prediction
 
-fit = lm(audience_score ~ critics_score + type*genre + runtime 
+fit = lm(audience_score ~ critics_score + type*genre + runtime + audience_rating
          + as.factor(year) + log(imdb_num_votes) + best_pic_nom + best_pic_win
          + best_actress_win + best_actor_win + best_dir_win + top200_box
          + critics_rating + mpaa_rating, data=movies)
+
+summary(fit)
+
+## concatante actors to engineer 
+
+movies %>% 
+  unite(actors, actor1:actor5, sep=",") %>% View()
+
+# Create a frequency table of actors
+
+act_tb_1 = as.data.frame(table(movies$actor1))
+act_tb_2 = as.data.frame(table(movies$actor2))
+act_tb_3 = as.data.frame(table(movies$actor3))
+act_tb_4 = as.data.frame(table(movies$actor4))
+act_tb_5 = as.data.frame(table(movies$actor5))
+act_tb = rbind(act_tb_1, act_tb_2, act_tb_3, act_tb_4, act_tb_5)
+
+act_tb %>% 
+  group_by(Var1) %>% 
+  summarise(freq = sum(Freq)) %>% 
+  arrange(desc(freq)) %>% View()
+
 
 
 
