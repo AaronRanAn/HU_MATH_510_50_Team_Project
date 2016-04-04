@@ -18,15 +18,12 @@ View(movies)
 
 names(movies)
 
-# [1] "title"            "audience_score"   "type"            
-# [4] "genre"            "runtime"          "year"            
-# [7] "mpaa_rating"      "studio"           "imdb_num_votes"  
-# [10] "critics_score"    "critics_rating"   "best_pic_nom"    
-# [13] "best_pic_win"     "best_actor_win"   "best_actress_win"
-# [16] "best_dir_win"     "top200_box"       "audience_rating" 
-# [19] "director"         "actor1"           "actor2"          
-# [22] "actor3"           "actor4"           "actor5"          
-# [25] "imdb_url"         "rt_url"           "imdb_id"
+# [1] "title"            "title_type"       "genre"            "runtime"          "mpaa_rating"     
+# [6] "studio"           "thtr_rel_year"    "thtr_rel_month"   "thtr_rel_day"     "dvd_rel_year"    
+# [11] "dvd_rel_month"    "dvd_rel_day"      "imdb_rating"      "imdb_num_votes"   "critics_rating"  
+# [16] "critics_score"    "audience_rating"  "audience_score"   "best_pic_nom"     "best_pic_win"    
+# [21] "best_actor_win"   "best_actress_win" "best_dir_win"     "top200_box"       "director"        
+# [26] "actors"           "imdb_url"         "rt_url" 
 
 ### How many movies do we have and what's the score distribution?  
 
@@ -82,6 +79,54 @@ t.test(critics_score ~ best_pic_nom, alternative='less', data = movies) # even m
 
 scatterplot.matrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_rating, movies)
 
+################## Start to Engineering Features  #########################
+
+# Create director, studio and gener frequency table to quantify the impact of these features
+
+dir_mv_freq = as.data.frame(table(movies$director))
+names(dir_mv_freq) = c("director", "dir_mv_freq")
+
+std_mv_freq = as.data.frame(table(movies$studio))
+names(std_mv_freq) = c("studio", "std_mv_freq")
+
+gr_mv_freq = as.data.frame(table(movies$genre))
+names(gr_mv_freq) = c("genre", "gr_mv_freq")
+
+movies$actors %>% 
+  str_c(collapse = ",") %>% 
+  str_split(",") %>% 
+  table(exclude = "NA") %>% 
+  as.data.frame() %>% 
+  arrange(desc(Freq)) -> act_mv_freq
+
+names(act_mv_freq) = c("actor", "act_mv_freq")
+
+
+## count words in title 
+
+movies %>% 
+  mutate(title_ws_ct = str_count(title, " ") + 1, 
+         runtime_gt_90 = as.numeric(runtime>90),
+         thtr_rel_date = ymd(str_c(thtr_rel_year, thtr_rel_month, thtr_rel_day, sep="-")),
+         dvd_rel_date = ymd(str_c(dvd_rel_year, dvd_rel_month, dvd_rel_day,  sep="-")),
+         thtr_rel_wkd = as.numeric(wday(thtr_rel_date) %in% c(4,5)),
+         thtr_rel_summer = as.numeric(thtr_rel_month %in% c(6,7)),
+         thtr_rel_holiday = as.numeric(thtr_rel_month %in% c(10, 11, 12)),
+         dvd_rel_holiday = as.numeric(dvd_rel_month %in% c(10, 11, 12)),
+         thtr_rel_dump = as.numeric(thtr_rel_month %in% c(1, 2, 8, 9)),
+         thtr_dvd_rel_diff = as.numeric(dvd_rel_date-thtr_rel_date)
+         ) %>% 
+  left_join(dir_mv_freq, by="director") %>% 
+  left_join(std_mv_freq, by="studio") %>% 
+  left_join(gr_mv_freq, by="genre") %>% View()
+
+act_mv_freq %>% 
+  filter(act_mv_freq>2) %>% 
+  select(actor) -> act_gt3_list
+
+act_gt3_list = as.vector(act_gt3_list$actor)
+
+
 ## Part 3: Building Multiple Linear Regression for prediction
 
 fit = lm(audience_score ~ critics_score + type*genre + runtime + audience_rating
@@ -133,9 +178,15 @@ names(dummy_actors) = t1
 
 model_movie = cbind(movies, dummy_actors)
 
+model_movie$test = sum(model_movie[29:111])
+
+model_movie %<>% 
+  rowwise() %>% 
+  mutate(test = sum(dm_robert_de_niro:dm_alex_rocco))
+
 ### ad actors to predictors
 
-fit = lm(audience_score ~ critics_score + title_type*genre + runtime + audience_rating
+fit = lm(audience_score ~ critics_score + title_type*genre + runtime
          + as.factor(thtr_rel_year) + log(imdb_num_votes) + best_pic_nom + best_pic_win
          + best_actress_win + best_actor_win + best_dir_win + top200_box
          + critics_rating + mpaa_rating + dm_robert_de_niro + dm_jeff_bridges + dm_matt_damon 
@@ -154,13 +205,16 @@ fit = lm(audience_score ~ critics_score + title_type*genre + runtime + audience_
          + dm_chloe_sevigny + dm_guy_pearce + dm_james_earl_jones + dm_jessica_lange + dm_joan_allen + dm_jude_law 
          + dm_kelly_preston + dm_maria_bello + dm_martin_short + dm_mena_suvari + dm_morgan_freeman + dm_patrick_swayze 
          + dm_sam_neill + dm_tara_reid + dm_william_h._macy + dm_adam_brody + dm_cedric_the_entertainer + dm_hector_elizondo 
-         + dm_jack_thompson + dm_joe_pantoliano + dm_louise_fletcher + dm_rufus_sewell + dm_will_patton + dm_alex_rocco, data=model_movie)
+         + dm_jack_thompson + dm_joe_pantoliano + dm_louise_fletcher + dm_rufus_sewell + dm_will_patton + dm_alex_rocco + test + as.factor(director)*best_dir_win, data=model_movie)
 
 base_formular = "audience_score ~ critics_score + type + genre + runtime + audience_rating + year + imdb_num_votes + best_pic_nom + best_pic_win + best_actress_win + best_actor_win + best_dir_win + top200_box+ critics_rating + mpaa_rating + "
 
 actor_formular = str_c(t1, collapse = " + ")
 
 final_formular = as.formula(str_c(base_formular, actor_formular, collapse = ""))
+
+model_movie$test = rowSums(model_movie[29:111], na.rm = FALSE, dims = 1)
+
 
 
 
