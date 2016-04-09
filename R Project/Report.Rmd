@@ -8,32 +8,269 @@ output:
     theme: cosmo
 ---
 
-This is the draft and skeleton of the final report. Blah blah blah... 
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=8, warning=FALSE, message=FALSE)
+options(width = 1500)
+```
+
+```{r eval=TRUE, echo=FALSE}
+require(dplyr)
+require(ggplot2)
+require(car)
+require(tidyr)
+require(magrittr)
+require(lubridate)
+require(stringr)
+require(caret)
+require(knitr)
+```
+
+
+```{r eval=TRUE, echo=FALSE}
+load(url("https://stat.duke.edu/~mc301/data/movies.Rdata"))
+```
 
 ### 1. Introduction
 
 > a summary of the data set and your goal.
 
+We have `dim(movies)[1]` movies and `dim(movies)[2]` features on the movies. We want to build a emprical model to predict the `audience score`
+
+Take a look at the `audience score` distribution. 
+
+```{r}
+
+qplot(audience_score, data=movies, geom = 'histogram')
+
+```
+
+Summary of the `audience score`
+
+```{r}
+
+summary(movies$audience_score)
+
+```
+
+
 ### 2. EDA
 
 > any univariate or bivariate summaries worth reporting.
+
+What are the lowest rating and highest rating movies?
+
+```{r}
+
+movies %>% 
+  filter(audience_score %in% c(max(audience_score), min(audience_score))) %>% kable()
+
+```
+
+Report bi-variate correlation scatter plot before modeling:
+
+```{r}
+
+scatterplot.matrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_rating, movies)
+
+```
+
 
 ### 3. Inference
 
 >  nswer the research question you have posed using a
 hypothesis test or a confidence interval.
 
+*Qestion: What's the difference between a Oscar nom movie and a non-nom one?*
+
+```{r}
+
+table(movies$best_pic_nom)
+
+movies %>% 
+  select(audience_score, critics_score, best_pic_nom) %>% 
+  group_by(best_pic_nom) %>% 
+  summarise(mean_aud_score = mean(audience_score), 
+            means_crt_score = mean(critics_score)) %>% kable()
+
+```
+
+Is the difference significant? 
+
+```{r}
+movies %>% 
+  select(audience_score, critics_score, best_pic_nom) %>% 
+  group_by(best_pic_nom) %>% 
+  summarise(mean_aud_score = mean(audience_score), 
+            means_crt_score = mean(critics_score)) %>% kable()
+
+```
+
+```{r}
+
+t.test(audience_score ~ best_pic_nom, alternative='less', data = movies) # yes, significantly smaller
+t.test(critics_score ~ best_pic_nom, alternative='less', data = movies) # even more significantly different
+
+```
+
 ### 4. The "Best Model" 
 
-What kind of title is this... Orz Kevin... 
+#### Feature engineering
 
-We have only 456 data points... let's torture the data until it confesses... 
+```{r}
+
+dir_mv_freq = as.data.frame(table(movies$director))
+names(dir_mv_freq) = c("director", "dir_mv_freq")
+
+std_mv_freq = as.data.frame(table(movies$studio))
+names(std_mv_freq) = c("studio", "std_mv_freq")
+
+gr_mv_freq = as.data.frame(table(movies$genre))
+names(gr_mv_freq) = c("genre", "gr_mv_freq")
+
+```
+
+```{r}
+
+movies %>% 
+  mutate(title_ws_ct = str_count(title, " ") + 1, # how many words in title?
+         runtime_gt_90 = as.numeric(runtime>90), # is runtime greater than 90
+         thtr_rel_date = ymd(str_c(thtr_rel_year, thtr_rel_month, thtr_rel_day, sep="-")), # date thrt release
+         dvd_rel_date = ymd(str_c(dvd_rel_year, dvd_rel_month, dvd_rel_day,  sep="-")), # date dvd release 
+         thtr_rel_wkd = as.numeric(wday(thtr_rel_date) %in% c(4,5)), # released in weekend?
+         thtr_rel_summer = as.numeric(thtr_rel_month %in% c(6,7)), # released in summer? 
+         thtr_rel_holiday = as.numeric(thtr_rel_month %in% c(10, 11, 12)), # released in holiday season?
+         dvd_rel_holiday = as.numeric(dvd_rel_month %in% c(10, 11, 12)), # dvd released in holiday?
+         thtr_rel_dump = as.numeric(thtr_rel_month %in% c(1, 2, 8, 9)), # released in 'dump month' (google it)
+         thtr_dvd_rel_diff = as.numeric(dvd_rel_date-thtr_rel_date) # time diff btw dvd and thrt release
+         ) %>% 
+  unite(actors, actor1:actor5, sep=",") %>% # add actors concate column
+  left_join(dir_mv_freq, by="director") %>% # add freq for dir
+  left_join(std_mv_freq, by="studio") %>% # add freq for studio
+  left_join(gr_mv_freq, by="genre") -> movie_model # add freq for gr. 
+
+```
+
+```{r}
+
+movie_model$actors %>% 
+  str_c(collapse = ",") %>% 
+  str_split(",") %>% 
+  table(., exclude = "NA") %>% 
+  as.data.frame() %>%
+  arrange(desc(Freq)) -> act_mv_freq
+
+movie_model$director %>% 
+  table() %>% 
+  as.data.frame() %>%
+  arrange(desc(Freq)) -> dir_mv_freq_ls
+
+act_mv_freq %>% 
+  filter(Freq>4) %>% 
+  select(.[1]) -> act_gt1_list
+
+dir_mv_freq_ls %>% 
+  filter(Freq>2) %>% 
+  select(.[1]) -> dir_gt1_list
+
+#############################
+
+t = as.vector(act_gt1_list$.)
+mymat = matrix(nrow=651, ncol=37)
+
+for(i in 1:651)  # for each row
+{
+  for(j in 1:37) # for every actors with 
+  {
+    mymat[i,j] = as.numeric(str_detect(movie_model$actors[i], t[j]))
+  }
+}
+
+t1 = paste0("dm_", tolower(gsub(" ", "_", t)))
+t2 = str_replace_all(t1, fixed(".", T), "_")
+t2 = str_replace_all(t2, fixed("'", T), "_")
+t2 = str_replace_all(t2, fixed("-", T), "_")
+
+##########################
+
+d = as.vector(dir_gt1_list$.)
+mymat2 = matrix(nrow=651, ncol=17)
+
+for(i in 1:651)  # for each row
+{
+  for(j in 1:17) # for every actors with 
+  {
+    mymat2[i,j] = as.numeric(str_detect(movie_model$director[i], t[j]))
+  }
+}
+
+d1 = paste0("dm_", tolower(gsub(" ", "_", d)))
+d2 = str_replace_all(d1, fixed(".", T), "_")
+d2 = str_replace_all(d2, fixed("'", T), "_")
+d2 = str_replace_all(d2, fixed("-", T), "_")
+
+dummy_dir = as.data.frame(mymat2)
+names(dummy_dir) = d2
+
+dummy_actors = as.data.frame(mymat)
+names(dummy_actors) = t2
+
+model_movie = cbind(movie_model, dummy_actors, dummy_dir)
+
+model_movie$pop_act_dir = rowSums(model_movie[, c(42:95)], na.rm = T)
+
+```
+
 
 > What is the “best” linear model for predicting the response variable? You do not need to explain every step you took to arrive at this model, but should give some indication of why you chose the model you did. If you tried a few different models, how did you settle on one?
 
 ● How well does your model do? What is the percent variation explained?
 ● What does your model tell you about relationships between your explanatory variables and your response variable?
 ● What conditions do you need for your analysis to hold? What are the implications if some of those conditions are violated.
+
+```{r}
+
+base_formular = "audience_score ~ title_type + genre + runtime + mpaa_rating + thtr_rel_year + thtr_rel_month + imdb_num_votes + critics_rating + imdb_rating + genre*dir_mv_freq + genre*std_mv_freq + genre*gr_mv_freq + critics_score + best_pic_nom + best_pic_win + best_actor_win + best_actress_win + best_dir_win + top200_box + title_ws_ct + runtime_gt_90 + thtr_rel_wkd + thtr_rel_summer + thtr_rel_holiday + dvd_rel_holiday +  thtr_rel_dump + thtr_dvd_rel_diff + dir_mv_freq + std_mv_freq + gr_mv_freq + pop_act_dir + pop_act_dir*genre"
+
+actor_formular = str_c(t2, collapse = " + ")
+dir_formular = str_c(d2, collapse = " + ")
+
+final_formular = as.formula(str_c(base_formular, actor_formular, dir_formular, sep = " + "))
+
+fit = lm(final_formular, data = model_movie)
+
+summary(fit)
+
+```
+
+Stepwise select to reduce model 
+
+```{r eval=T, results='hide'}
+
+fit2 = lm(final_formular, data = na.omit(model_movie))
+
+step = step(fit2)
+
+```
+This is what the stepwise selection return
+```{r}
+step$call
+```
+
+apply the selected model
+
+```{r}
+
+fit3 = lm(audience_score ~ genre + thtr_rel_year + thtr_rel_month + 
+    imdb_num_votes + critics_rating + imdb_rating + std_mv_freq + 
+    best_pic_nom + runtime_gt_90 + thtr_dvd_rel_diff + pop_act_dir + 
+    dm_john_travolta + dm_keanu_reeves + dm_val_kilmer + dm_charlize_theron + 
+    dm_juliette_lewis + dm_naomi_watts + dm_robert_de_niro, data=model_movie)
+
+summary(fit3)
+
+```
+
 
 ### 5. Prediction
 

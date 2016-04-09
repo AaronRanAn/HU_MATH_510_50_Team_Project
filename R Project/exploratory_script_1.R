@@ -23,7 +23,8 @@ names(movies)
 # [11] "dvd_rel_month"    "dvd_rel_day"      "imdb_rating"      "imdb_num_votes"   "critics_rating"  
 # [16] "critics_score"    "audience_rating"  "audience_score"   "best_pic_nom"     "best_pic_win"    
 # [21] "best_actor_win"   "best_actress_win" "best_dir_win"     "top200_box"       "director"        
-# [26] "actors"           "imdb_url"         "rt_url" 
+# [26] "actor1"           "actor2"           "actor3"           "actor4"           "actor5"          
+# [31] "imdb_url"         "rt_url"   
 
 ### How many movies do we have and what's the score distribution?  
 
@@ -33,8 +34,6 @@ qplot(audience_score, data=movies, geom = 'histogram')
 qplot(critics_score, data=movies, geom = 'histogram')
 
 # qplot(audience_score, data=movies, geom = 'density')
-
-qplot(audience_score, data=movies, geom = 'boxplot')
 
 summary(movies$audience_score)
 
@@ -92,15 +91,9 @@ names(std_mv_freq) = c("studio", "std_mv_freq")
 gr_mv_freq = as.data.frame(table(movies$genre))
 names(gr_mv_freq) = c("genre", "gr_mv_freq")
 
-movies$actors %>% 
-  str_c(collapse = ",") %>% 
-  str_split(",") %>% 
-  table(exclude = "NA") %>% 
-  as.data.frame() %>% 
-  arrange(desc(Freq)) -> act_mv_freq
+
 
 names(act_mv_freq) = c("actor", "act_mv_freq")
-
 
 ## count words in title 
 
@@ -116,15 +109,54 @@ movies %>%
          thtr_rel_dump = as.numeric(thtr_rel_month %in% c(1, 2, 8, 9)),
          thtr_dvd_rel_diff = as.numeric(dvd_rel_date-thtr_rel_date)
          ) %>% 
+  unite(actors, actor1:actor5, sep=",") %>% 
   left_join(dir_mv_freq, by="director") %>% 
   left_join(std_mv_freq, by="studio") %>% 
-  left_join(gr_mv_freq, by="genre") %>% View()
+  left_join(gr_mv_freq, by="genre") -> movie_model
+
+movie_model$actors %>% 
+  str_c(collapse = ",") %>% 
+  str_split(",") %>% 
+  table(., exclude = "NA") %>% 
+  as.data.frame() %>%
+  arrange(desc(Freq)) -> act_mv_freq
 
 act_mv_freq %>% 
-  filter(act_mv_freq>2) %>% 
-  select(actor) -> act_gt3_list
+  filter(Freq>2) %>% 
+  select(.[1]) -> act_gt3_list
 
-act_gt3_list = as.vector(act_gt3_list$actor)
+t = as.vector(act_gt3_list$.)
+
+mymat = matrix(nrow=651, ncol=197)
+
+for(i in 1:651)  # for each row
+{
+  for(j in 1:197) # for every actors with 
+  {
+    mymat[i,j] = as.numeric(str_detect(movie_model$actors[i], t[j])) # assign values based on position: product of two indexes
+  }
+}
+
+t1 = paste0("dm_", tolower(gsub(" ", "_", t)))
+
+dummy_actors = as.data.frame(mymat)
+
+names(dummy_actors) = t1
+
+model_movie = cbind(movie_model, dummy_actors)
+
+# 
+# act_gt3_list = as.vector(act_gt3_list$actor)
+# 
+# init_mat = matrix(nrow=651, ncol=197)
+# 
+# for(i in 1:651)  # for each row
+# {
+#   for(j in 1:197) 
+#   {
+#     mymat[i,j] = as.numeric(str_detect(movies_test$actors[i], t[j])) # assign values based on position: product of two indexes
+#   }
+# }
 
 
 ## Part 3: Building Multiple Linear Regression for prediction
@@ -136,10 +168,7 @@ fit = lm(audience_score ~ critics_score + type*genre + runtime + audience_rating
 
 summary(fit)
 
-## concatante actors to engineer 
 
-movies %<>% 
-  unite(actors, actor1:actor5, sep=",")
 
 # Create a frequency table of actors
 
@@ -159,14 +188,13 @@ act_tb %>%
 
 t = as.vector(act_freq$Var1)
 
-
-mymat = matrix(nrow=651, ncol=83)
+mymat = matrix(nrow=651, ncol=197)
 
 for(i in 1:651)  # for each row
 {
-  for(j in 1:83) 
+  for(j in 1:197) # for every actors with 
   {
-  mymat[i,j] = as.numeric(str_detect(movies_test$actors[i], t[j])) # assign values based on position: product of two indexes
+  mymat[i,j] = as.numeric(str_detect(movies$actors[i], t[j])) # assign values based on position: product of two indexes
   }
 }
 
