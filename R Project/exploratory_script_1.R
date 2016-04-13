@@ -7,6 +7,8 @@ require(tidyr)
 require(magrittr)
 require(lubridate)
 require(stringr)
+require(caret)
+require(knitr)
 
 load(url("https://stat.duke.edu/~mc301/data/movies.Rdata"))
 
@@ -40,7 +42,7 @@ summary(movies$audience_score)
 ## which is the worst movie? 
 
 movies %>% 
-  filter(audience_score %in% c(max(audience_score), min(audience_score))) %>% View()
+  filter(audience_score %in% c(max(audience_score), min(audience_score))) %>% kable()
 
 ## how many votes do they receive? 
 
@@ -57,7 +59,7 @@ movies %>%
   select(audience_score, critics_score, best_pic_nom) %>% 
   group_by(best_pic_nom) %>% 
   summarise(mean_aud_score = mean(audience_score), 
-            means_crt_score = mean(critics_score))
+            means_crt_score = mean(critics_score)) %>% 
 
 # best_pic_nom mean_aud_score means_crt_score
 # (fctr)          (dbl)           (dbl)
@@ -70,7 +72,7 @@ movies %>%
   select(audience_score, critics_score, best_pic_nom) %>% 
   group_by(best_pic_nom) %>% 
   summarise(mean_aud_score = mean(audience_score), 
-            means_crt_score = mean(critics_score)) %>% 
+            means_crt_score = mean(critics_score)) %>% kable()
 
 t.test(audience_score ~ best_pic_nom, alternative='less', data = movies) # yes, significantly smaller
 t.test(critics_score ~ best_pic_nom, alternative='less', data = movies) # even more significantly different
@@ -90,10 +92,6 @@ names(std_mv_freq) = c("studio", "std_mv_freq")
 
 gr_mv_freq = as.data.frame(table(movies$genre))
 names(gr_mv_freq) = c("genre", "gr_mv_freq")
-
-
-
-names(act_mv_freq) = c("actor", "act_mv_freq")
 
 ## count words in title 
 
@@ -121,96 +119,95 @@ movie_model$actors %>%
   as.data.frame() %>%
   arrange(desc(Freq)) -> act_mv_freq
 
+movie_model$director %>% 
+  table() %>% 
+  as.data.frame() %>%
+  arrange(desc(Freq)) -> dir_mv_freq_ls
+
 act_mv_freq %>% 
+  filter(Freq>4) %>% 
+  select(.[1]) -> act_gt1_list
+
+dir_mv_freq_ls %>% 
   filter(Freq>2) %>% 
-  select(.[1]) -> act_gt3_list
+  select(.[1]) -> dir_gt1_list
 
-t = as.vector(act_gt3_list$.)
+#############################
 
-mymat = matrix(nrow=651, ncol=197)
+t = as.vector(act_gt1_list$.)
+mymat = matrix(nrow=651, ncol=37)
 
 for(i in 1:651)  # for each row
 {
-  for(j in 1:197) # for every actors with 
+  for(j in 1:37) # for every actors with 
   {
-    mymat[i,j] = as.numeric(str_detect(movie_model$actors[i], t[j])) # assign values based on position: product of two indexes
+    mymat[i,j] = as.numeric(str_detect(movie_model$actors[i], t[j]))
   }
 }
 
 t1 = paste0("dm_", tolower(gsub(" ", "_", t)))
+t2 = str_replace_all(t1, fixed(".", T), "_")
+t2 = str_replace_all(t2, fixed("'", T), "_")
+t2 = str_replace_all(t2, fixed("-", T), "_")
+
+##########################
+
+d = as.vector(dir_gt1_list$.)
+mymat2 = matrix(nrow=651, ncol=17)
+
+for(i in 1:651)  # for each row
+{
+  for(j in 1:17) # for every actors with 
+  {
+    mymat2[i,j] = as.numeric(str_detect(movie_model$director[i], t[j]))
+  }
+}
+
+d1 = paste0("dm_", tolower(gsub(" ", "_", d)))
+d2 = str_replace_all(d1, fixed(".", T), "_")
+d2 = str_replace_all(d2, fixed("'", T), "_")
+d2 = str_replace_all(d2, fixed("-", T), "_")
+
+dummy_dir = as.data.frame(mymat2)
+names(dummy_dir) = d2
 
 dummy_actors = as.data.frame(mymat)
+names(dummy_actors) = t2
 
-names(dummy_actors) = t1
-
-model_movie = cbind(movie_model, dummy_actors)
-
-# 
-# act_gt3_list = as.vector(act_gt3_list$actor)
-# 
-# init_mat = matrix(nrow=651, ncol=197)
-# 
-# for(i in 1:651)  # for each row
-# {
-#   for(j in 1:197) 
-#   {
-#     mymat[i,j] = as.numeric(str_detect(movies_test$actors[i], t[j])) # assign values based on position: product of two indexes
-#   }
-# }
-
+model_movie = cbind(movie_model, dummy_actors, dummy_dir)
 
 ## Part 3: Building Multiple Linear Regression for prediction
 
-fit = lm(audience_score ~ critics_score + type*genre + runtime + audience_rating
-         + as.factor(year) + log(imdb_num_votes) + best_pic_nom + best_pic_win
-         + best_actress_win + best_actor_win + best_dir_win + top200_box
-         + critics_rating + mpaa_rating, data=movies)
+base_formular = "audience_score ~ title_type +  genre + runtime + mpaa_rating + studio + thtr_rel_year + thtr_rel_month + imdb_num_votes + critics_rating + critics_score + best_pic_nom + best_pic_win + best_actor_win + best_actress_win + best_dir_win + top200_box + as.factor(director) + title_ws_ct + runtime_gt_90 + thtr_rel_wkd + thtr_rel_summer + thtr_rel_holiday + dvd_rel_holiday +  thtr_rel_dump + thtr_dvd_rel_diff + dir_mv_freq + std_mv_freq + gr_mv_freq + "
+
+base_formular = "audience_score ~ title_type +  genre + runtime + mpaa_rating + thtr_rel_month + thtr_rel_year + imdb_num_votes + critics_rating + critics_score + best_pic_nom + best_pic_win + best_actor_win + best_actress_win + best_dir_win + top200_box + title_ws_ct + runtime_gt_90 + thtr_rel_wkd + thtr_rel_summer + thtr_rel_holiday + dvd_rel_holiday +  thtr_rel_dump + thtr_dvd_rel_diff + dir_mv_freq + std_mv_freq + gr_mv_freq + "
+
+actor_formular = str_c(t2, collapse = " + ")
+
+dir_formular = str_c(names(dm_dir_df), collapse = " + ")
+
+final_formular = as.formula(str_c(base_formular, actor_formular, collapse = ""))
+
+fit = lm(final_formular, data = model_movie)
+
+fit = lm(final_formular, data = model_movie)
+
+
+
+
+fit = lm(  audience_score ~ title_type +  genre + runtime + mpaa_rating  + thtr_rel_month + imdb_num_votes + critics_rating + critics_score + 
+           best_pic_nom + best_pic_win + best_actor_win + best_actress_win + best_dir_win + top200_box + title_ws_ct + runtime_gt_90 + thtr_rel_wkd + thtr_rel_summer + 
+           thtr_rel_holiday + dvd_rel_holiday +  thtr_rel_dump + thtr_dvd_rel_diff + dir_mv_freq + std_mv_freq + gr_mv_freq, data=model_movie)
 
 summary(fit)
 
 
 
-# Create a frequency table of actors
 
-act_tb_1 = as.data.frame(table(movies$actor1))
-act_tb_2 = as.data.frame(table(movies$actor2))
-act_tb_3 = as.data.frame(table(movies$actor3))
-act_tb_4 = as.data.frame(table(movies$actor4))
-act_tb_5 = as.data.frame(table(movies$actor5))
-act_tb = rbind(act_tb_1, act_tb_2, act_tb_3, act_tb_4, act_tb_5)
 
-act_tb %>% 
-  group_by(Var1) %>% 
-  summarise(freq = sum(Freq)) %>% 
-  arrange(desc(freq)) %>% 
-  filter(freq>2) %>% 
-  select(Var1) -> act_freq
 
-t = as.vector(act_freq$Var1)
 
-mymat = matrix(nrow=651, ncol=197)
 
-for(i in 1:651)  # for each row
-{
-  for(j in 1:197) # for every actors with 
-  {
-  mymat[i,j] = as.numeric(str_detect(movies$actors[i], t[j])) # assign values based on position: product of two indexes
-  }
-}
-
-t1 = paste0("dm_", tolower(gsub(" ", "_", t)))
-
-dummy_actors = as.data.frame(mymat)
-
-names(dummy_actors) = t1
-
-model_movie = cbind(movies, dummy_actors)
-
-model_movie$test = sum(model_movie[29:111])
-
-model_movie %<>% 
-  rowwise() %>% 
-  mutate(test = sum(dm_robert_de_niro:dm_alex_rocco))
 
 ### ad actors to predictors
 
@@ -241,7 +238,39 @@ actor_formular = str_c(t1, collapse = " + ")
 
 final_formular = as.formula(str_c(base_formular, actor_formular, collapse = ""))
 
+
+
 model_movie$test = rowSums(model_movie[29:111], na.rm = FALSE, dims = 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Create a frequency table of actors
+
+# act_tb_1 = as.data.frame(table(movies$actor1))
+# act_tb_2 = as.data.frame(table(movies$actor2))
+# act_tb_3 = as.data.frame(table(movies$actor3))
+# act_tb_4 = as.data.frame(table(movies$actor4))
+# act_tb_5 = as.data.frame(table(movies$actor5))
+# act_tb = rbind(act_tb_1, act_tb_2, act_tb_3, act_tb_4, act_tb_5)
+# 
+# act_tb %>% 
+#   group_by(Var1) %>% 
+#   summarise(freq = sum(Freq)) %>% 
+#   arrange(desc(freq)) %>% 
+#   filter(freq>2) %>% 
+#   select(Var1) -> act_freq
+
 
 
 
