@@ -2,10 +2,11 @@
 title: "HU MATH 510 Final Project"
 author: "Jean, Gwenth, Joshua & Aaron"
 date: "February 19, 2016"
-output: 
-  html_document: 
+output:
+  html_document:
     highlight: haddock
     theme: cosmo
+  pdf_document: default
 ---
 
 
@@ -71,7 +72,7 @@ Report bi-variate correlation scatter plot before modeling:
 
 ```{r}
 
-scatterplot.matrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_rating, movies)
+scatterplotMatrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_rating, movies)
 
 ```
 
