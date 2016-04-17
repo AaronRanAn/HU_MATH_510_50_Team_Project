@@ -243,34 +243,11 @@ final_formular = as.formula(str_c(base_formular, actor_formular, collapse = ""))
 model_movie$test = rowSums(model_movie[29:111], na.rm = FALSE, dims = 1)
 
 
+spotlight=data.frame(genre="Drama", thtr_rel_year=2015,thtr_rel_month=11, imdb_num_votes=145801,critics_rating="Certified Fresh", imdb_rating=8.1, std_mv_freq=13,best_pic_nom="yes",
+                     runtime_gt_90= "yes", thtr_dvd_rel_diff = 90, pop_act_dir=0,dm_john_travolta="no",dm_keanu_reeves = "no", dm_val_kilmer="no", dm_charlize_theron="no", 
+                     dm_juliette_lewis='no',dm_juliette_lewis="no",dm_robert_de_niro="no", dm_naomi_watts="0")
 
-
-
-
-
-
-
-
-
-
-
-
-# Create a frequency table of actors
-
-# act_tb_1 = as.data.frame(table(movies$actor1))
-# act_tb_2 = as.data.frame(table(movies$actor2))
-# act_tb_3 = as.data.frame(table(movies$actor3))
-# act_tb_4 = as.data.frame(table(movies$actor4))
-# act_tb_5 = as.data.frame(table(movies$actor5))
-# act_tb = rbind(act_tb_1, act_tb_2, act_tb_3, act_tb_4, act_tb_5)
-# 
-# act_tb %>% 
-#   group_by(Var1) %>% 
-#   summarise(freq = sum(Freq)) %>% 
-#   arrange(desc(freq)) %>% 
-#   filter(freq>2) %>% 
-#   select(Var1) -> act_freq
-
+predict(fit3, spotlight, interval="predict")
 
 
 

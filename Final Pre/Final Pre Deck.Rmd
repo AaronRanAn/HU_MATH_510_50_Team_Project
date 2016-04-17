@@ -73,11 +73,7 @@ Apprently *God Father Part II* is the highest rated movie.
 
 ## 2. EDA - Univeriate or Bivariate Relationship 
 
-```{r echo=F, fig.height=5, fig.width=6}
-
-scatterplotMatrix(~audience_score+critics_score+runtime+imdb_num_votes+critics_rating, movies)
-
-```
+![](graph.png)
 
 
 ## 3. Inference
@@ -101,8 +97,8 @@ movies %>%
 *Qestion: Are the differences significant?*
 
 ```{r}
-t.test(audience_score ~ best_pic_nom, alternative='less', data = movies) # yes, significantly smaller
-t.test(critics_score ~ best_pic_nom, alternative='less', data = movies) # even more significantly different
+t.test(audience_score ~ best_pic_nom, alternative='less', data = movies) # more significant than critics score
+t.test(critics_score ~ best_pic_nom, alternative='less', data = movies)
 ```
 
 
